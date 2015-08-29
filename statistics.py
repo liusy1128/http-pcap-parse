@@ -1,7 +1,8 @@
 #encoding=utf-8
 # -*- coding:gb2312 -*-
 import time
-import testdb
+import httpdb
+import httppcap
 
 
 dicturl = {}
@@ -23,7 +24,7 @@ def url_Count(url):
 def url_Statistics(filename,cmdStr):
     dicturl.clear()
     #open data
-    hel = testdb.opendata(filename)
+    hel = httpdb.opendata(filename)
     cur = hel[1].cursor()
     #数据库检索
     cur.execute(cmdStr)
@@ -45,17 +46,16 @@ def url_Statistics(filename,cmdStr):
 #c = "select * from http_packet where tcp_packet like '%sina%'"
 #关键字统计    
 def keyword_statistcis(filename,keyword,n):
-    hel = testdb.opendata(filename)
+    hel = httpdb.opendata(filename)
     cur = hel[1].cursor()
     #统计计数
-    print '*******search keyword:  %s ********\r\n'%keyword
+    print '*******search keyword:  %s ********'%keyword
     countstr = "select count(*) from http_packet where tcp_packet like '%%%s%%'"%keyword
-    
     cur.execute(countstr)
     res = cur.fetchall()
     for line in res:
         print 'keyword count : %s'%line
-        
+    print 
     #打印记录
     countstr = "select * from http_packet where tcp_packet like '%%%s%%'"%keyword
     cur.execute(countstr)
@@ -63,7 +63,10 @@ def keyword_statistcis(filename,keyword,n):
     i = 0;
     for line in res:
         i = i+1
-        print line
+        print httppcap.timeformat_sec_to_date(line[0])
+        for h in line:
+            print h
+        #print line
         if i == n:
             break
 
