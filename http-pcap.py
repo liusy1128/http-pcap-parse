@@ -209,7 +209,13 @@ if __name__ == '__main__':
        print 'this pcap file have been saved in DB'
        #print 'this pcap file pcap packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
     else : 
-        print 'read pcap file to database,please wait'
+
+
+
+
+
+
+          print 'read pcap file to database,please wait'
         packet_import_to_db(filename)
 
 
