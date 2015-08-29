@@ -67,7 +67,7 @@ firsttime = 0
 lasttime = 0
 tabel_line = {}  #数据库行存储结构
 
-def packet_import_to_db():
+def packet_import_to_db(filename):
     not_ip_packet = 0  #记录抓取的报文中非ip包的个数
     not_tcp_packet = 0 #记录抓取的报文中非tcp包的个数
     f = open('F:/python/http-pcap2.pcap','rb')
@@ -78,7 +78,7 @@ def packet_import_to_db():
         f.close()
         return
     
-    cur = httpdb.opendata()  #数据库的conn
+    cur = httpdb.opendata(filename)  #数据库的conn
     conn = cur[1]
     i = 1#报文编号，记录wireshark中的序号，便于调试
     for ts,buf in pcap:
@@ -140,7 +140,7 @@ def packet_import_to_db():
                 #    print k,value
                 #有效的url插入
                 if url[1] == 0: 
-                    testdb.insert(tabel_line,conn)
+                    httpdb.insert(tabel_line,conn)
                     
                 tabel_line.clear()
             #重点关注客户报文，网页内容暂不关注
@@ -159,8 +159,8 @@ def packet_import_to_db():
             #    print 'not http packet %d'%i
 
         i = i+1
-        if i == 500:
-            print 'please wait a moment'
+        if i%3000 == 0:
+            print 'read file to db,please wait a moment'
     #记录最后一个报文时间
     lasttime = ts
     httpdb.closedata(conn)
@@ -169,7 +169,10 @@ def packet_import_to_db():
     print 'this pcap file pcap packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
     print 'read file finish'
 
-def url_make_cmdStr():
+def url_make_cmdStr(filename):
+
+    firsttime =  httpdb.GetMin_timestamp(filename)
+    lasttime = httpdb.GetMax_timestamp(filename)
     print 'this pcap file pcap packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
     whileflag = True
 
@@ -199,6 +202,7 @@ if __name__ == '__main__':
     #可以做成让用户输入文件名，此处简单处理
     filename="http-pcap-data3.db"
     #如果报文已经读取，直接读数据库，没有则解析pcap报文
+    
     if True == os.path.exists(filename):
        firsttime =  httpdb.GetMin_timestamp(filename)
        lasttime = httpdb.GetMax_timestamp(filename)
@@ -206,7 +210,7 @@ if __name__ == '__main__':
        #print 'this pcap file pcap packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
     else : 
         print 'read pcap file to database,please wait'
-        #packet_import_to_db()
+        packet_import_to_db(filename)
 
 
     flag = True
@@ -217,7 +221,7 @@ if __name__ == '__main__':
         print '3.exit'
         choice = str(raw_input())
         if choice == '1':
-            cmdStr = url_make_cmdStr()
+            cmdStr = url_make_cmdStr(filename)
            
             statistics.url_Statistics(filename,cmdStr)
         elif choice == '2':
