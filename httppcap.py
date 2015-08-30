@@ -24,6 +24,7 @@ def timeformat_date_to_sec(timestamp):
     return birth_secds
 
 #对url进行整形，暂时只对部分网址进行解析
+#存在bug，对于多种url组合时，存在问题，解决思路是取出每种url的位置，取最小的一个
 def urlformat(url):
     err = 0
     test = url.find('.net') #http://blog.chinaunix.net
@@ -70,7 +71,8 @@ tabel_line = {}  #数据库行存储结构
 def packet_import_to_db(filename):
     not_ip_packet = 0  #记录抓取的报文中非ip包的个数
     not_tcp_packet = 0 #记录抓取的报文中非tcp包的个数
-    f = open('F:/python/http-pcap2.pcap','rb')
+    #f = open('F:/python/http-pcap2.pcap','rb')
+    f = open('2015083003.pcap','rb')
     
     try:
         pcap = dpkt.pcap.Reader(f)
