@@ -49,18 +49,20 @@ def keyword_statistcis(filename,keyword,n):
     hel = httpdb.opendata(filename)
     cur = hel[1].cursor()
     #统计计数
-    print '*******search keyword:  %s ********'%keyword
+    print '*******查找关键字:  %s ********'%keyword
+    #SQL语句，统计总数
     countstr = "select count(*) from http_packet where tcp_packet like '%%%s%%'"%keyword
     cur.execute(countstr)
     res = cur.fetchall()
     for line in res:
-        print 'keyword count : %s'%line
+        print '关键字总数为 : %s'%line
     print 
-    #打印记录
+    #SQL语句，查找符合条件的记录
     countstr = "select * from http_packet where tcp_packet like '%%%s%%'"%keyword
     cur.execute(countstr)
     res = cur.fetchall()
     i = 0;
+    #打印记录
     for line in res:
         i = i+1
         print httppcap.timeformat_sec_to_date(line[0])

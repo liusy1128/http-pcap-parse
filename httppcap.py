@@ -71,8 +71,8 @@ tabel_line = {}  #数据库行存储结构
 def packet_import_to_db(filename):
     not_ip_packet = 0  #记录抓取的报文中非ip包的个数
     not_tcp_packet = 0 #记录抓取的报文中非tcp包的个数
-    #f = open('F:/python/http-pcap2.pcap','rb')
-    f = open('2015083003.pcap','rb')
+    f = open('http-pcap2.pcap','rb')
+    #f = open('2015083003.pcap','rb')
     
     try:
         pcap = dpkt.pcap.Reader(f)
@@ -162,30 +162,30 @@ def packet_import_to_db(filename):
 
         i = i+1
         if i%3000 == 0:
-            print 'read file to db,please wait a moment'
+            print '正在读取pcap文件到数据库中，请稍等'
     #记录最后一个报文时间
     lasttime = ts
     httpdb.closedata(conn)
     f.close()
 
     #print 'this pcap file pcap packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
-    print 'read file finish'
+    
 
 def url_make_cmdStr(filename):
 
     firsttime =  httpdb.GetMin_timestamp(filename)
     lasttime = httpdb.GetMax_timestamp(filename)
-    print 'this pcap file pcap http packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
+    print 'pcap文件中http报文的时间段是从 %s 到 %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
     whileflag = True
 
     while flag :
-        print 'please input the start time ,for example: 2015-08-23 17:11:57'
-        tempStr = 'start should after %s\r\n'%timeformat_sec_to_date(firsttime)
+        print '请输入开始时间，按照后面的格式: 2015-08-23 17:11:57'
+        tempStr = '开始时间应该晚于 %s\r\n'%timeformat_sec_to_date(firsttime)
         startime_date = str(raw_input(tempStr))
         startime_input_sec = timeformat_date_to_sec(startime_date)
 
-        print 'please input the end time,for example: 2015-08-23 17:11:57 '
-        tempStr = 'end should before %s\r\n'%timeformat_sec_to_date(lasttime)
+        print '请输入结束时间，按照后面的格式: 2015-08-23 17:11:57 '
+        tempStr = '结束时间应该早于： %s\r\n'%timeformat_sec_to_date(lasttime)
         endtime_date = str(raw_input(tempStr))
         endtime_input_sec = timeformat_date_to_sec(endtime_date)
 
@@ -193,8 +193,8 @@ def url_make_cmdStr(filename):
         if (endtime_input_sec >  startime_input_sec) and (startime_input_sec > firsttime) and (endtime_input_sec < lasttime) :
             break
         else :
-            print 'input err,again\r\n'
-    
+            print '输入时间错误，请重新输入\r\n'
+    #SQL语句
     cmsStr = "select * from http_packet where timestamp > %d and timestamp < %d"%(startime_input_sec,endtime_input_sec)
     return cmsStr
 
@@ -208,26 +208,32 @@ if __name__ == '__main__':
     if True == os.path.exists(filename):
        firsttime =  httpdb.GetMin_timestamp(filename)
        lasttime = httpdb.GetMax_timestamp(filename)
-       print 'this pcap file have been saved in DB'
+       #print 'this pcap file have been saved in DB'
+       print 'pcap文件已经记录在数据库中，直接读取数据库数据'
        #print 'this pcap file pcap packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
     else : 
-       print 'read pcap file to database,please wait'
+       print '读取pcap文件到数据库中，请稍等'
        packet_import_to_db(filename)
 
 
     flag = True
     while flag:
-        print 'please select which function you want'
-        print '1.sort the url record between time'
-        print '2.find the keyword in http packet'
-        print '3.exit'
+        print "数据准备完成"
+        #print 'please select which function you want'
+        #print '1.sort the url record between time'
+        #print '2.find the keyword in http packet'
+        #print '3.exit'
+        print '请选择你需要的功能点，输入数字进行选择'
+        print '1、输出一段时间内url的访问记录'
+        print '2、在报文中查找关键字'
+        print '3、退出'
         choice = str(raw_input())
         if choice == '1':
             cmdStr = url_make_cmdStr(filename)
             statistics.url_Statistics(filename,cmdStr)
         elif choice == '2':
-            keyword = str(raw_input('please input the keyword : '))
-            n = str(raw_input('please input the print item num :'))
+            keyword = str(raw_input('请输入关键字 : '))
+            n = str(raw_input('请输入需要打印的记录的条数 :'))
             #这里需要对参数n的有效性做校验
             statistics.keyword_statistcis(filename,keyword,string.atoi(n))
         else :
