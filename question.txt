@@ -1,1 +1,2 @@
-1、dpkt.tcp对分片报文处理存在问题，也就是wireshark显示为tcp segment of a reassembled pdu的报文，原因待查
+1、url的整理还存在问题，修改思路为取每个类型，然后使用最小值下标即可
+2、输入的有效性校验不足
