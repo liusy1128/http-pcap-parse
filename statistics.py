@@ -3,7 +3,7 @@
 import time
 import httpdb
 import httppcap
-
+import string
 
 dicturl = {}
 def url_Count(url):
@@ -21,10 +21,10 @@ def url_Count(url):
 #url统计函数，操作字符串
 #"select * from http_packet"
 #"select * from http_packet where timestamp > timevalue1 and timestamp < timevalue2"
-def url_Statistics(filename,cmdStr):
+def url_Statistics(tablename,cmdStr):
     dicturl.clear()
     #open data
-    hel = httpdb.opendata(filename)
+    hel = httpdb.opendata(tablename)
     cur = hel[1].cursor()
     #数据库检索
     cur.execute(cmdStr)
@@ -44,21 +44,40 @@ def url_Statistics(filename,cmdStr):
 
 #b = "select count(*) from http_packet where tcp_packet like '%sina%'"
 #c = "select * from http_packet where tcp_packet like '%sina%'"
-#关键字统计    
-def keyword_statistcis(filename,keyword,n):
-    hel = httpdb.opendata(filename)
+#关键字统计
+tabelStr=['timestamp        :  ',
+          'sip              :  ',
+          'dip              :  ',
+          'sport            :  ',
+          'dport            :  ',
+          'method           :  ',
+          'url              :  ',
+          'get              :  ',
+          'accept-language  :  ',
+          'accept-encoding  :  ',
+          'connection       :  ',
+          'accept           :  ',
+          'host             :  ',
+          'referer          :  ',
+          'origin           :  ',
+          'Cache-Control    :  ',
+          'Cookie           :  ',
+          'tcp_packet       :  ']
+
+def keyword_statistcis(tablename,keyword,n):
+    hel = httpdb.opendata(tablename)
     cur = hel[1].cursor()
     #统计计数
     print '*******查找关键字:  %s ********'%keyword
     #SQL语句，统计总数
-    countstr = "select count(*) from http_packet where tcp_packet like '%%%s%%'"%keyword
+    countstr = "select count(*) from %s where tcp_packet like '%%%s%%'"%(tablename,keyword)
     cur.execute(countstr)
     res = cur.fetchall()
     for line in res:
         print '关键字总数为 : %s'%line
     print 
     #SQL语句，查找符合条件的记录
-    countstr = "select * from http_packet where tcp_packet like '%%%s%%'"%keyword
+    countstr = "select * from %s where tcp_packet like '%%%s%%'"%(tablename,keyword)
     cur.execute(countstr)
     res = cur.fetchall()
     i = 0;
@@ -66,15 +85,16 @@ def keyword_statistcis(filename,keyword,n):
     for line in res:
         i = i+1
         print httppcap.timeformat_sec_to_date(line[0])
+        j = 0
         for h in line:
-            print h
-        #print line
+            print tabelStr[j],h
+            j = j+1
         if i == n:
             break
 
     print '\r\n'
-        
-        
-        
+
+
+
 
 
