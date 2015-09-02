@@ -7,220 +7,68 @@ import httpdb
 import statistics
 import os.path
 import string
+import thread 
 
+import threadlib
+import commonlib
 
+mutiThreadFlag = 1
 
 # 秒转化为日期
-def timeformat_sec_to_date(timestamp):
-    timeArray = time.localtime(timestamp)
-    otherStyleTime = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
-    return otherStyleTime
-
-#日期转化为妙
-def timeformat_date_to_sec(timestamp):
-    tup_birth = time.strptime(timestamp, "%Y-%m-%d %H:%M:%S");
-    birth_secds = time.mktime(tup_birth)
-    return birth_secds
-
-#对url进行整形，暂时只对部分网址进行解析
-#存在bug，对于多种url组合时，存在问题，解决思路是取出每种url的位置，取最小的一个
-def urlformat(url):
-    err = 0
-    test = url.find('.net') #http://blog.chinaunix.net
-    if test != -1:
-        num = test+4
-        format_url = url[0:num]
-        return format_url,err
-
-    test = url.find('.org') #http://www.ietf.org/
-    if test != -1:
-        num = test+4
-        format_url = url[0:num]
-        return format_url,err
-    
-    test = url.find('.com')#www.baidu.com
-    if test != -1 :
-        cnnum = url.find('.com.cn') #www.sina.com.cn
-        if cnnum == -1: #.com网址
-            num = test+4
-        elif test == cnnum: #.com.cn网址
-            num = test+7
-        else:#在.com网址中访问了.com.cn网址，取第一个
-            num = test+4
-        format_url = url[0:num]
-        return format_url,err
-    
-    test = url.find('.cn')
-    if test != -1:
-        num = test+3
-        format_url = url[0:num]
-        return format_url,err
-    
-    err = 1
-    return url,err
-
-def httpGetformat(tcpdata):
-    end = tcpdata.find('host')
-    if end == -1:
-        return None
-    start = tcpdata.find('get')
-    if start == -1:
-        return None
-    if start > test:
-        return None
-    start = start + 3
-    format_Get = tcpdata[start:end]
-    return format_Get
-    
-
-firsttime = 0
-lasttime = 0
-tabel_line = {}  #数据库行存储结构
 
 
-def formatheader(http,keyvalue):
-    find = 0
-    for k,v in http.headers.iteritems():
-        if k == keyvalue:
-             return v
-    return None
-
-def httpGetformat(tcpdata):
-    end = tcpdata.find('Host')
-    if end == -1:
-        return None
-    
-    start = tcpdata.find('GET')
-    if start == -1:
-        return None
-    if start > end:
-        return None
-    start = start + 3
-    format_Get = tcpdata[start:end]
-    return format_Get
-
-     
 def packet_import_to_db(filename,dbTableName):
-    not_ip_packet = 0  #记录抓取的报文中非ip包的个数
-    not_tcp_packet = 0 #记录抓取的报文中非tcp包的个数
+   
+    global mutiThreadFlag
     f = open(filename,'rb')
-    #f = open('2015083003.pcap','rb')
     
     try:
         pcap = dpkt.pcap.Reader(f)
     except:
         f.close()
         return
-    
-    cur = httpdb.opendata(dbTableName)  #数据库的conn
-    conn = cur[1]
+
     i = 1#报文编号，记录wireshark中的序号，便于调试
+    if mutiThreadFlag == 1:
+        thread.start_new_thread(threadlib.httpThreadDataProcess,(dbTableName,1) )
     for ts,buf in pcap:
-        #记录第一个报文时间
-        if i == 1:
-            firsttime = ts
 
-        eth = dpkt.ethernet.Ethernet(buf)
-        if eth.type!=2048:
-            #print 'not ip packet %d'%i
-            not_ip_packet =  not_ip_packet+1
-            i= i+1
-            continue
-             
-        ip = eth.data
-        if ip.p != 6:
-            #print 'not tcp packet %d'%i
-            not_tcp_packet = not_tcp_packet + 1
-            i= i+1
-            continue
-        tcp = ip.data
-        
-        #if tcp.dport == 80 and len(tcp.data) > 0:
-        if len(tcp.data) > 0:
-            #print 'packet num %d'%i
-            if tcp.dport == 80 :
-                try:
-                    http = dpkt.http.Request(tcp.data)
-                except:
-                   
-                    i = i+1
-                    continue
-                find = 0
-                #print '===================================='
-                for k,v in http.headers.iteritems():
-                    if k == 'referer':
-                        find = 1
-                        break
-                    
-                if find != 1:
-                    for k,v in http.headers.iteritems():
-                        if k == 'origin':
-                            break
-               
-                tabel_line['timestamp'] = ts
-                tabel_line['sip'] = socket.inet_ntoa(ip.src)
-                tabel_line['dip'] = socket.inet_ntoa(ip.dst)
-                tabel_line['sport'] = tcp.sport
-                tabel_line['dport'] = tcp.dport
-                tabel_line['method'] = http.method
-                url= urlformat(v)
-                tabel_line['url'] = url[0]
-                
-                tabel_line['get'] = httpGetformat(tcp.data)
-                tabel_line['accept-language'] = formatheader(http,'accept-language')
-                tabel_line['accept-encoding'] = formatheader(http,'accept-encoding')
-                tabel_line['connection'] = formatheader(http,'connection')
-                tabel_line['accept'] = formatheader(http,'accept')
-                tabel_line['host'] = formatheader(http,'host')
-                tabel_line['referer'] = formatheader(http,'referer')
-                tabel_line['origin'] = formatheader(http,'origin')
-                tabel_line['Cache-Control'] = formatheader(http,'cache-control')
-                tabel_line['Cookie'] = formatheader(http,'cookie')
-                
-                tabel_line['tcp_packet'] = tcp.data
-
-
-                if url[1] == 0: 
-                    httpdb.insert(dbTableName,tabel_line,conn)
-                    
-                tabel_line.clear()
-            #重点关注客户报文，网页内容暂不关注
-            if tcp.sport == 80 :
-                try:
-                    http = dpkt.http.Response(tcp.data)
-                except:
-                    #print 'response err'
-                    i = i+1
-                    continue      
-
+        if mutiThreadFlag == 1:
+            while True:
+                if GetThreadNum() < 16:
+                    thread.start_new_thread(threadlib.httpThreadProcess, (buf,dbTableName,ts))
+                    addThreadNum()
+                    break
+                else:
+                    time.sleep(0.01)
+        else:
+            httpPacketParse(buf,dbTableName,ts)
         i = i+1
-        if i%3000 == 0:
-            print '正在读取pcap文件到数据库中，请稍等'
-    #记录最后一个报文时间
-    lasttime = ts
-    httpdb.closedata(conn)
+        #多线程时，有后台任务写，执行到这里，数据还没有准备好，这里打印不准确
+        if mutiThreadFlag == 0:
+            if i%3000 == 0:
+                print '正在读取pcap文件到数据库中，请稍等'
     f.close()
-
-    #print 'this pcap file pcap packet from %s to %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
+    return 
     
 
 def url_make_cmdStr(dbTableName):
     
     firsttime =  httpdb.GetMin_timestamp(dbTableName)
     lasttime = httpdb.GetMax_timestamp(dbTableName)
-    print 'pcap文件中http报文的时间段是从 %s 到 %s'%(timeformat_sec_to_date(firsttime),timeformat_sec_to_date(lasttime))
+    print 'pcap文件中http报文的时间段是从 %s 到 %s'%(commonlib.timeformat_sec_to_date(firsttime),commonlib.timeformat_sec_to_date(lasttime))
     whileflag = True
 
     while flag :
         print '请输入开始时间，按照后面的格式: 2015-08-23 17:11:57'
-        tempStr = '开始时间应该晚于 %s\r\n'%timeformat_sec_to_date(firsttime)
+        tempStr = '开始时间应该晚于 %s\r\n'%commonlib.timeformat_sec_to_date(firsttime)
         startime_date = str(raw_input(tempStr))
-        startime_input_sec = timeformat_date_to_sec(startime_date)
+        startime_input_sec = commonlib.timeformat_date_to_sec(startime_date)
 
         print '请输入结束时间，按照后面的格式: 2015-08-23 17:11:57 '
-        tempStr = '结束时间应该早于： %s\r\n'%timeformat_sec_to_date(lasttime)
+        tempStr = '结束时间应该早于： %s\r\n'%commonlib.timeformat_sec_to_date(lasttime)
         endtime_date = str(raw_input(tempStr))
-        endtime_input_sec = timeformat_date_to_sec(endtime_date)
+        endtime_input_sec = commonlib.timeformat_date_to_sec(endtime_date)
 
         #时间有效性校验
         if (endtime_input_sec >  startime_input_sec) and (startime_input_sec > firsttime) and (endtime_input_sec < lasttime) :
@@ -264,7 +112,6 @@ if __name__ == '__main__':
   
     #if True == os.path.exists(filename):
     if num != 0:
-       print 'here'
        firsttime =  httpdb.GetMin_timestamp(dbTableName)
        lasttime = httpdb.GetMax_timestamp(dbTableName)
        #print 'this pcap file have been saved in DB'

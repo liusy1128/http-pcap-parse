@@ -1,8 +1,8 @@
 #-*-encoding:utf-8-*-
 import sqlite3
+import thread
 
-
-                
+lock = thread.allocate_lock()           
 dataName = "pcapHttpDB.db"
 def opendata(tablename):
         conn = sqlite3.connect(dataName)
@@ -32,13 +32,9 @@ def closedata(conn):
         conn.close()
 
                 
-def insert(tablename,tabel_line,conn):
-        #tabel_line = {'time':1.32,'sip':1,'dip':3,'sport':3,'dport':1,'method':'get','url':'www.baidu.com','tcp_packet':'http packet'}
-        #tabel_line2 = {'time':1.22,'sip':1,'dip':3,'sport':3,'dport':1,'method':'get','url':'www.sina.com','tcp_packet':'http packetsdjidjsijdisjdisjdijisjdijsidj'}
-        
-        
-        #hel = opendata()
-
+def insert(tablename,tabel_line):
+        #lock.acquire()
+        conn = sqlite3.connect(dataName)
         cmdStr = "insert into %s(timestamp, sip,dip,sport,dport,method,url,get,accept_language,accept_encoding,\
                 connection,accept,host,referer,origin,Cache_Control,Cookie,tcp_packet) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"%tablename
         conn.execute(cmdStr,(tabel_line['timestamp'], tabel_line['sip'],tabel_line['dip'],
@@ -49,14 +45,8 @@ def insert(tablename,tabel_line,conn):
                              tabel_line['tcp_packet']))
         conn.commit()
 
-        #hel[1].execute("insert into http_packet(time, sip,dip,sport,dport,method,url,tcp_packet) values (?,?,?,?,?,?,?,?)",
-        #                                (tabel_line2['time'], tabel_line2['sip'],tabel_line2['dip'],
-        #                                 tabel_line2['sport'],tabel_line2['dport'],tabel_line2['method'],tabel_line2['url'],tabel_line2['tcp_packet']))
-        #hel[1].commit()
-        
-      
-        #showalldata()
-        #hel[1].close()        
+        conn.close()
+        #lock.release()
 
  
 def showalldata(dataName):
@@ -95,7 +85,6 @@ def IsTableExist(tableName):
         res = cur.fetchone()
         return res[0]
 
-#IsTableExist("http-pcap-data3.db")
 
 
 

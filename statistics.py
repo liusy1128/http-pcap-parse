@@ -4,6 +4,7 @@ import time
 import httpdb
 import httppcap
 import string
+import commonlib
 
 dicturl = {}
 def url_Count(url):
@@ -70,25 +71,30 @@ def keyword_statistcis(tablename,keyword,n):
     #统计计数
     print '*******查找关键字:  %s ********'%keyword
     #SQL语句，统计总数
-    countstr = "select count(*) from %s where tcp_packet like '%%%s%%'"%(tablename,keyword)
+    countstr = "select count(*) from %s where url like '%%%s%%' or \
+                            get like '%%%s%%' or referer like '%%%s%%'or origin like '%%%s%%' or\
+                            host like '%%%s%%'"%(tablename,keyword,keyword,keyword,keyword,keyword)
     cur.execute(countstr)
     res = cur.fetchall()
     for line in res:
         print '关键字总数为 : %s'%line
     print 
     #SQL语句，查找符合条件的记录
-    countstr = "select * from %s where tcp_packet like '%%%s%%'"%(tablename,keyword)
+    countstr = "select * from %s where url like '%%%s%%' or \
+                            get like '%%%s%%' or referer like '%%%s%%'or origin like '%%%s%%' or\
+                            host like '%%%s%%'"%(tablename,keyword,keyword,keyword,keyword,keyword)
     cur.execute(countstr)
     res = cur.fetchall()
     i = 0;
     #打印记录
     for line in res:
         i = i+1
-        print httppcap.timeformat_sec_to_date(line[0])
+        print  commonlib.timeformat_sec_to_date(line[0])
         j = 0
         for h in line:
             print tabelStr[j],h
             j = j+1
+        print '\r\n'
         if i == n:
             break
 
