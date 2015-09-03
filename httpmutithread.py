@@ -5,6 +5,7 @@ import thread
 import Queue
 import httpparse
 import httpdb
+import time
 lock = thread.allocate_lock()
 
 
@@ -49,19 +50,43 @@ def httpThreadProcess(buf,dbTableName,ts):
     httpparse.httpPacketParse(buf,dbTableName,ts)
     delThreadNum()
     thread.exit_thread()
+finishflag = 0
+def httpThreadReadEndSet(value):
+    global finishflag
+    finishflag = value
+
+def httpThreadReadEndFlag():
+    global finishflag
+    return finishflag     
     
+
 def httpThreadDataProcess(dbTableName,ts):
     global dataQueue
-    
+    i = 0
     while True:
         if False == dataQueue.empty():
+            i = i+1
             tabelDB = GetDatatoQueue()
             httpdb.insert(dbTableName,tabelDB)
+            
+            if i%200 == 0:
+                print '正在读取pcap文件到数据库中，请稍等'
+        else :
+            if httpThreadReadEndFlag() == 1:
+                threadnotify()
+                thread.exit_thread()
+                
+            time.sleep(0.1)
 
 import threading
 con = threading.Condition()
 
-def threadcon():
+def threadwait():
     con.acquire()
     con.wait()
+    con.release()
+
+def threadnotify():
+    con.acquire()
+    con.notify()
     con.release()

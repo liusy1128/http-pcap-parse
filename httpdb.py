@@ -16,7 +16,7 @@ def opendata(tablename):
         return cur, conn
 
 def creatdata(tablename):
-        print 'creat data %s'%tablename
+        
         conn = sqlite3.connect(dataName)
         cmdStr = """create table if not exists %s(timestamp float primary key , sip integer, dip integer ,
                                         sport integer,dport integer,method varchar(16),url varchar(256),
@@ -79,7 +79,7 @@ def GetMax_timestamp(dataName):
 
 def IsTableExist(tableName):
         conn = sqlite3.connect(dataName)
-        print dataName
+       
         cmd = "select count(*) from %s"%tableName
         cur = conn.execute(cmd)
         res = cur.fetchone()

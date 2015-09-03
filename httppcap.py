@@ -82,14 +82,14 @@ def url_make_cmdStr(dbTableName):
 
 def GetPcapFileName():
     flag = True
-    #while flag:
-    #    print '请输入需要读取的pcap文件'
-    #    filename = str(raw_input())
-    #    if False == os.path.exists(filename):
-    #        print '文件不存在，请重新输入'
-    #    else :
-    #        break
-    pcapfilename = "http-pcap2.pcap"
+    while flag:
+        print '请输入需要读取的pcap文件'
+        pcapfilename = str(raw_input())
+        if False == os.path.exists(pcapfilename):
+            print '文件不存在，请重新输入'
+        else :
+            break
+    #pcapfilename = "http-pcap2.pcap"
     length = pcapfilename.find('.')
     dbTableName = pcapfilename[0:length]
     #此处filename作为表名，需要细化处理，暂时简单处理
@@ -122,7 +122,10 @@ if __name__ == '__main__':
        
        packet_import_to_db(filename[0],filename[1])
 
-    #httpmutithread.threadcon()
+    #支持多进程，此处等待数据库写入完成  
+    if commonlib.IsSupportMutiThread() != 0:
+        httpmutithread.httpThreadReadEndSet(1)
+        httpmutithread.threadwait()
     flag = True
     while flag:
         print "数据准备完成"
