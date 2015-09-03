@@ -21,5 +21,6 @@ def IsSupportMutiThread():
     return mutiThreadFlag
 
 def SupportMutiThreadSet(flag):
+    global mutiThreadFlag
     mutiThreadFlag = flag
     return 
