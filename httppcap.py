@@ -7,19 +7,19 @@ import httpdb
 import statistics
 import os.path
 import string
-import thread 
+import thread
+import httpparse
 
-import threadlib
+import httpmutithread
 import commonlib
 
-mutiThreadFlag = 1
 
 # 秒转化为日期
 
 
 def packet_import_to_db(filename,dbTableName):
    
-    global mutiThreadFlag
+    
     f = open(filename,'rb')
     
     try:
@@ -29,23 +29,23 @@ def packet_import_to_db(filename,dbTableName):
         return
 
     i = 1#报文编号，记录wireshark中的序号，便于调试
-    if mutiThreadFlag == 1:
-        thread.start_new_thread(threadlib.httpThreadDataProcess,(dbTableName,1) )
-    for ts,buf in pcap:
 
-        if mutiThreadFlag == 1:
+    if commonlib.IsSupportMutiThread() != 0:
+        thread.start_new_thread(httpmutithread.httpThreadDataProcess,(dbTableName,1) )
+        
+    for ts,buf in pcap:
+        if commonlib.IsSupportMutiThread() != 0:
             while True:
-                if GetThreadNum() < 16:
-                    thread.start_new_thread(threadlib.httpThreadProcess, (buf,dbTableName,ts))
-                    addThreadNum()
+                if httpmutithread.GetThreadNum() < 16:
+                    thread.start_new_thread(httpmutithread.httpThreadProcess, (buf,dbTableName,ts))
                     break
                 else:
                     time.sleep(0.01)
         else:
-            httpPacketParse(buf,dbTableName,ts)
+            httpparse.httpPacketParse(buf,dbTableName,ts)
         i = i+1
         #多线程时，有后台任务写，执行到这里，数据还没有准备好，这里打印不准确
-        if mutiThreadFlag == 0:
+        if commonlib.IsSupportMutiThread() == 0:
             if i%3000 == 0:
                 print '正在读取pcap文件到数据库中，请稍等'
     f.close()
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     httpdb.creatdata(dbTableName)
     
     num = httpdb.IsTableExist(dbTableName)
-  
+    commonlib.SupportMutiThreadSet(0)
     #if True == os.path.exists(filename):
     if num != 0:
        firsttime =  httpdb.GetMin_timestamp(dbTableName)
@@ -122,7 +122,7 @@ if __name__ == '__main__':
        
        packet_import_to_db(filename[0],filename[1])
 
-
+    #httpmutithread.threadcon()
     flag = True
     while flag:
         print "数据准备完成"

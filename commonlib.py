@@ -2,6 +2,7 @@
 # -*- coding:gb2312 -*-
 import time
 
+mutiThreadFlag = 0
 
 # 秒转化为日期
 def timeformat_sec_to_date(timestamp):
@@ -14,3 +15,11 @@ def timeformat_date_to_sec(timestamp):
     tup_birth = time.strptime(timestamp, "%Y-%m-%d %H:%M:%S");
     birth_secds = time.mktime(tup_birth)
     return birth_secds
+
+def IsSupportMutiThread():
+    global mutiThreadFlag
+    return mutiThreadFlag
+
+def SupportMutiThreadSet(flag):
+    mutiThreadFlag = flag
+    return 

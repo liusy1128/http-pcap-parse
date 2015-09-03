@@ -2,8 +2,11 @@
 # -*- coding:gb2312 -*-
 import time
 import dpkt
-
-
+import socket
+import string
+import httpdb
+import commonlib
+import httpmutithread
 
 
 #对url进行整形，暂时只对部分网址进行解析
@@ -69,7 +72,7 @@ def httpGetItemformat(tcpdata):
     return format_Get
 
 def httpPacketParse(buf,dbTableName,ts):
-    global mutiThreadFlag
+    
     tabel_line = {}  #数据库行存储结构
     eth = dpkt.ethernet.Ethernet(buf)
     if eth.type!=2048:
@@ -118,11 +121,11 @@ def httpPacketParse(buf,dbTableName,ts):
             tabel_line['origin'] = formatheader(http,'origin')
             tabel_line['Cache-Control'] = formatheader(http,'cache-control')
             tabel_line['Cookie'] = formatheader(http,'cookie')
-            tabel_line['tcp_packet'] = None
+            tabel_line['tcp_packet'] = None #不存储报文
 
             if url[1] == 0:
-                if mutiThreadFlag == 1:
-                    PutDatatoQueue(tabel_line)
+                if commonlib.IsSupportMutiThread() != 0:
+                    httpmutithread.PutDatatoQueue(tabel_line)
                 else :
                     httpdb.insert(dbTableName,tabel_line)
                         

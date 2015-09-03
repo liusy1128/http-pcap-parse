@@ -3,7 +3,8 @@
 # -*- coding:gb2312 -*-
 import thread
 import Queue
-
+import httpparse
+import httpdb
 lock = thread.allocate_lock()
 
 
@@ -44,7 +45,8 @@ def GetDatatoQueue():
     return eval(tabel)
      
 def httpThreadProcess(buf,dbTableName,ts):
-    httpPacketParse(buf,dbTableName,ts)
+    addThreadNum()
+    httpparse.httpPacketParse(buf,dbTableName,ts)
     delThreadNum()
     thread.exit_thread()
     
@@ -55,3 +57,11 @@ def httpThreadDataProcess(dbTableName,ts):
         if False == dataQueue.empty():
             tabelDB = GetDatatoQueue()
             httpdb.insert(dbTableName,tabelDB)
+
+import threading
+con = threading.Condition()
+
+def threadcon():
+    con.acquire()
+    con.wait()
+    con.release()
